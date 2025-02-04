@@ -1,3 +1,4 @@
+import subprocess
 import streamlit as st
 import openai
 import crawl4ai
@@ -107,6 +108,8 @@ async def process_urls(api_key: str) -> List[dict]:
     return results
 
 def main():
+    subprocess.run("playwright install", check=True)
+    
     st.title("Website Content Update Tracker")
     
     # API Key input
