@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import streamlit as st
 import openai
@@ -108,7 +109,11 @@ async def process_urls(api_key: str) -> List[dict]:
     return results
 
 def main():
-    subprocess.run("playwright install", check=True)
+    playwright_path = shutil.which("playwright")
+    if playwright_path:
+        subprocess.run([playwright_path, "install"], check=True)
+    else:
+        print("Playwright not found. Make sure it is installed and available in PATH.")
     
     st.title("Website Content Update Tracker")
     
