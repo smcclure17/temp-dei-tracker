@@ -7,8 +7,9 @@ from tracker.models import ScrapeResult
 
 ROOT = pathlib.Path(__file__).parent.parent
 # DATA_ROOT = pathlib.Path("data") / "tracker"
-DATA_ROOT = pathlib.Path("/mnt/s3/tracker")
 # DATA_ROOT.mkdir(exist_ok=True)
+
+DATA_ROOT = pathlib.Path("/mnt/s3/tracker")
 DATETIME = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 
 
@@ -29,6 +30,8 @@ def get_previous_snapshot(
         content_html_dir = directory / "content.html"
         if content_html_dir.exists():
             content_html = content_html_dir.read_text()
+        else:
+            content_html=None
         meta = (directory / "meta.json").read_text()
         meta_dict = json.loads(meta)
         return ScrapeResult(**meta_dict, content=content, content_html=content_html)

@@ -9,7 +9,7 @@ class ScrapeResult(pydantic.BaseModel):
     """cosine similarity to the previous snapshot"""
     content: str
     timestamp: str
-    content_html: str
+    content_html: str | None = None
     title: str | None = None
     screenshot_url: str | None = None
     old_screenshot_url: str | None = None
@@ -40,12 +40,12 @@ class ScrapeResultWithoutContent(pydantic.BaseModel):
     """screenshot of previous snapshot. used for helping compare diffs"""
 
     def __eq__(self, value):
-        if not isinstance(value, ScrapeResult):
+        if not isinstance(value, ScrapeResultWithoutContent):
             raise ValueError("Cannot compare")
         return self.similarity == value.similarity
 
     def __gt__(self, value):
-        if not isinstance(value, ScrapeResult):
+        if not isinstance(value, ScrapeResultWithoutContent):
             raise ValueError("Cannot compare")
         return self.similarity > value.similarity
 
