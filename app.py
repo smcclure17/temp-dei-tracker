@@ -111,18 +111,21 @@ def url_to_name(url: str) -> str:
 
 
 def chatgpt_compare(openai_client: openai.OpenAI, baseline: str, updated: str) -> str:
-    prompt = f"""We are tracking changes in DEI and LGBT language in websites. We are particularly concerned
-    with removals of references to diversity. Please compare the two website content, formatted as markdown.
+    prompt = f"""We are monitoring changes in DEI and LGBT-related language on websites, with a focus on **removals** 
+    of diversity-related references. Please analyze the two versions of website content provided below and identify 
+    **semantic content changes**, ignoring formatting differences. Be super concise.
 
-    Has any content changed between the two versions? If yes, return "Yes" and then a list of changes. If no
-    changes, return "No". Focus on content not formatting.
+    ### Instructions:
+    - Return a concise list of all changes. If there are none, output "No changes" and nothing else.
 
-    before:
+    ### Website Content:
+
+    Before:
     ```
     {baseline}
     ```
 
-    after:
+    After:
     ```
     {updated}
     ```
@@ -140,12 +143,11 @@ def chatgpt_compare(openai_client: openai.OpenAI, baseline: str, updated: str) -
 
 async def process_urls(api_key: str) -> List[dict]:
     results = []
-    run_config = crawl4ai.CrawlerRunConfig(screenshot=True, pdf=True)
 
     openai_client = openai.OpenAI(api_key=api_key)
 
     async with crawl4ai.AsyncWebCrawler() as crawler:
-        pages = await crawler.arun_many(URLS, config=run_config)
+        pages = await crawler.arun_many(URLS)
 
         for page in pages:
             url_dir_name = url_to_name(page.url)
