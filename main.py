@@ -44,7 +44,7 @@ async def process_page(page: crawl4ai.CrawlResult):
             page.screenshot, S3_BUCKET, sc_file_name
         )
 
-    return ScrapeResult(
+    res = ScrapeResult(
         id=id,
         url=page.url,
         title=_get_html_title(page.html),
@@ -55,29 +55,31 @@ async def process_page(page: crawl4ai.CrawlResult):
         old_screenshot_url=old_screenshot_url,
         old_timestamp=old_timestamp,
     )
+    save_data(res)  # persist
+    return res
 
 
 async def process_urls(urls) -> List[ScrapeResult]:
     """
     Concurrently scrape and process all URLs.
     """
-    results = []
     async with crawl4ai.AsyncWebCrawler() as crawler:
-        run_config = crawl4ai.CrawlerRunConfig(screenshot=SCREENSHOT)
-        pages = await crawler.arun_many(urls, config=run_config)
+        run_config = crawl4ai.CrawlerRunConfig(screenshot=SCREENSHOT, stream=True)
+        tasks = []
 
-    # Process pages concurrently
-    results = await asyncio.gather(*(process_page(page) for page in pages))
+        async for page in await crawler.arun_many(urls, config=run_config):
+            tasks.append(asyncio.create_task(process_page(page)))
+
+    results = await asyncio.gather(*tasks)
     return results
 
 
-def save_data(results: list[ScrapeResult]):
-    for result in results:
-        data_path = storage.get_path_for_url(result.url)
-        data_path.mkdir(exist_ok=True)
-        storage.save_current_data(data_path, result)
-        if ARCHIVE:
-            storage.save_archive_data(data_path, result)
+def save_data(result: ScrapeResult):
+    data_path = storage.get_path_for_url(result.url)
+    data_path.mkdir(exist_ok=True)
+    storage.save_current_data(data_path, result)
+    if ARCHIVE:
+        storage.save_archive_data(data_path, result)
 
 
 async def main():
@@ -96,7 +98,6 @@ async def main():
     results = await process_urls(urls=urls)
 
     slack.send_slack_alerts(results=results, change_threshold=CHANGE_THRESH)
-    save_data(results)
     storage.persist_update_time()
 
 

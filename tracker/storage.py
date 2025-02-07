@@ -93,5 +93,5 @@ def persist_update_time():
 
 def get_last_update_time():
     path = DATA_ROOT / "meta.txt"
-    str_date = path.read_text().split(": ")[1]
+    str_date = path.read_text().split(": ")[1].strip()
     return datetime.strptime(str_date, "%Y-%m-%dT%H-%M-%S")
