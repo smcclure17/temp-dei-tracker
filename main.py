@@ -20,7 +20,6 @@ async def process_page(page: crawl4ai.CrawlResult):
     data_path = storage.get_path_for_url(page.url)
     id = storage.url_to_id(page.url)
 
-    print(f"PATH: {data_path} exists? {data_path.exists()}")
     if data_path.exists():
         old_snapshot = storage.get_previous_snapshot(data_path, COMPARE_TO_OLDEST)
         similarity = change_detection.get_cosine_similarity(
@@ -66,7 +65,9 @@ async def process_urls(urls) -> List[ScrapeResult]:
     Concurrently scrape and process all URLs.
     """
     async with crawl4ai.AsyncWebCrawler() as crawler:
-        run_config = crawl4ai.CrawlerRunConfig(screenshot=SCREENSHOT, stream=True)
+        run_config = crawl4ai.CrawlerRunConfig(
+            screenshot=SCREENSHOT, stream=True, cache_mode=crawl4ai.CacheMode.DISABLED
+        )
         tasks = []
 
         async for page in await crawler.arun_many(urls, config=run_config):
