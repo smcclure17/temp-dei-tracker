@@ -2,10 +2,10 @@ from urllib.parse import urlparse
 
 import requests
 
-from tracker.models import ScrapeResult
+from tracker.models import ScrapeResultWithoutContent
 
 
-def format_slack_message(change: ScrapeResult, threshold: float) -> dict:
+def format_slack_message(change: ScrapeResultWithoutContent, threshold: float) -> dict:
     """
     Format a Slack message for a page change notification.
 
@@ -77,7 +77,7 @@ def format_slack_message(change: ScrapeResult, threshold: float) -> dict:
     }
 
 
-def send_slack_alerts(results: list[ScrapeResult], change_threshold: float) -> None:
+def send_slack_alerts(results: list[ScrapeResultWithoutContent], change_threshold: float) -> None:
     sorted_results = sorted(results)
     for change in sorted_results:
         if change.similarity < change_threshold:
@@ -91,3 +91,16 @@ def send_slack_alerts(results: list[ScrapeResult], change_threshold: float) -> N
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 print(f"Failed to send Slack notification for {change.url}: {str(e)}")
+
+def send_slack_alert(change: ScrapeResultWithoutContent, change_threshold: float) -> None:
+    if change.similarity < change_threshold:
+        message = format_slack_message(change, change_threshold)
+        try:
+            response = requests.post(
+                "https://hooks.slack.com/services/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",
+                json=message,
+                headers={"Content-Type": "application/json"},
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send Slack notification for {change.url}: {str(e)}")

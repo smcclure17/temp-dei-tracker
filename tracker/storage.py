@@ -5,10 +5,10 @@ import pathlib
 
 from tracker.models import ScrapeResult
 
-ROOT = pathlib.Path(__file__).parent
-DATA_ROOT = pathlib.Path("data") / "tracker"
-DATA_ROOT.mkdir(exist_ok=True)
-URLS_PATH = ROOT / "urls.txt"
+ROOT = pathlib.Path(__file__).parent.parent
+# DATA_ROOT = pathlib.Path("data") / "tracker"
+DATA_ROOT = pathlib.Path("/mnt/s3/tracker")
+# DATA_ROOT.mkdir(exist_ok=True)
 DATETIME = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 
 
@@ -26,9 +26,12 @@ def get_previous_snapshot(
 ) -> ScrapeResult:
     def load_content_from_dir(directory: pathlib.Path) -> ScrapeResult:
         content = (directory / "content.md").read_text()
+        content_html_dir = directory / "content.html"
+        if content_html_dir.exists():
+            content_html = content_html_dir.read_text()
         meta = (directory / "meta.json").read_text()
         meta_dict = json.loads(meta)
-        return ScrapeResult(**meta_dict, content=content)
+        return ScrapeResult(**meta_dict, content=content, content_html=content_html)
 
     if not compare_to_oldest:
         return load_content_from_dir(base_path / "current")
@@ -68,12 +71,14 @@ def _save_data(
 ):
     curr_path.mkdir(exist_ok=True)
     content_path = curr_path / "content.md"
+    content_html_path = curr_path / "content.html"
     meta_path = curr_path / "meta.json"
     markdown = page.content
-    metadata = page.model_dump_json(exclude="content")
+    metadata = page.model_dump_json(exclude=("content", "content_html"))
 
     content_path.write_text(markdown)
     meta_path.write_text(metadata)
+    content_html_path.write_text(page.content_html)
 
 
 def save_current_data(path: pathlib.Path, page: ScrapeResult):
@@ -87,11 +92,11 @@ def save_archive_data(path: pathlib.Path, page: ScrapeResult):
 
 
 def persist_update_time():
-    path = DATA_ROOT / "meta.txt"
+    path = ROOT / "meta.txt"
     path.write_text(f"Last updated: {DATETIME}")
 
 
 def get_last_update_time():
-    path = DATA_ROOT / "meta.txt"
+    path = ROOT / "meta.txt"
     str_date = path.read_text().split(": ")[1].strip()
     return datetime.strptime(str_date, "%Y-%m-%dT%H-%M-%S")

@@ -4,7 +4,7 @@ import asyncio
 from typing import List
 from tracker import aws_helpers, change_detection, slack, storage
 from tracker import sitemaps
-from tracker.models import ScrapeResult
+from tracker.models import ScrapeResult, ScrapeResultWithoutContent
 
 
 ARCHIVE = True
@@ -49,14 +49,15 @@ async def process_page(page: crawl4ai.CrawlResult):
         url=page.url,
         title=_get_html_title(page.html),
         content=page.markdown,
+        content_html=page.html,
         screenshot_url=screenshot_url,
         timestamp=storage.DATETIME,
         similarity=similarity,
         old_screenshot_url=old_screenshot_url,
         old_timestamp=old_timestamp,
     )
-    save_data(res)  # persist
-    return res
+    save_data(res)  # persist with content
+    return ScrapeResultWithoutContent.from_scrape_result(res)  # drop content
 
 
 async def process_urls(urls) -> List[ScrapeResult]:
