@@ -51,7 +51,7 @@ def get_previous_snapshot(
     )
 
     if target_dir == base_path / "current":
-        print("Warning: No timestamped dirs found. Falling back to current")
+        print(f"Warning: No timestamped dirs found for {base_path}. Falling back to current")
 
     return load_content_from_dir(target_dir)
 
@@ -103,3 +103,30 @@ def get_last_update_time():
     path = ROOT / "meta.txt"
     str_date = path.read_text().split(": ")[1].strip()
     return datetime.strptime(str_date, "%Y-%m-%dT%H-%M-%S")
+
+
+def save_sitemap_urls(urls: list[str], sitemap_url: str):
+    domain = urlparse(sitemap_url).netloc
+    path = SITEMAP_TRACKING / f"{domain}-{DATETIME}-sitemap.txt"
+    path.write_text("\n".join(urls))
+
+
+def get_sitemap_urls(sitemap_url: str, compare_to_oldest=True):
+    domain = urlparse(sitemap_url).netloc
+
+    # Find files containing the domain
+    sitemap_files = [
+        file
+        for file in SITEMAP_TRACKING.glob(f"{domain}-*-sitemap.txt")
+        if domain in file.name
+    ]
+
+    if not sitemap_files:
+        return None  # No previous sitemap found
+
+    if compare_to_oldest:
+        file = min(sitemap_files, key=lambda f: f.stat().st_mtime)
+    else:
+        file = max(sitemap_files, key=lambda f: f.stat().st_mtime)
+
+    return file.read_text().splitlines()

@@ -86,7 +86,7 @@ def save_data(result: ScrapeResult):
 
 
 async def main():
-    site_map_urls = ["https://www.consumerfinance.gov/sitemap.xml"]
+    site_map_urls = ["https://www.bls.gov/sitemap.xml"]
     urls = []
     updated_after = storage.get_last_update_time()
 

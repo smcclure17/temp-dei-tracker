@@ -42,6 +42,9 @@ async def _parse_sitemap(
                     urls.append(loc_elem.text)
             except ValueError:
                 print(f"Invalid date format in <lastmod>: {lastmod_elem.text}")
+        elif loc_elem is not None:
+            print(f"Missing <lastmod> tag for {loc_elem.text}, fetching anyway")
+            urls.append(loc_elem.text)
 
     for elem in root.findall(f"{namespace}sitemap/{namespace}loc"):
         sub_sitemap = elem.text
@@ -61,12 +64,16 @@ async def _get_all_urls(
     try:
         xml_content = await _fetch_sitemap(session, sitemap_url)
     except NotFoundError as e:
-        print(f"Error fetching sitemap: {e}")
+        print(f"Error fetching sitemap {sitemap_url}: {e}")
         return []
     return await _parse_sitemap(session, xml_content, updated_after)
 
 
 async def get_updated_urls_from_map(sitemap_index_url: str, updated_after: datetime):
     """List all urls from a sitemap that have been modified after the given timestamp"""
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+    ) as session:
         return await _get_all_urls(session, sitemap_index_url, updated_after)
